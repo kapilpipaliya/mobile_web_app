@@ -16,6 +16,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   InAppWebViewController? _webViewController;
+  final urlController = TextEditingController();
   String url = "https://flutter.dev/";
   String htmlContent = '';
   double progress = 0;
@@ -104,9 +105,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           },
                           icon: const Icon(Icons.refresh)),
                       Expanded(
-                        child: Text(
-                          url,
-                          overflow: TextOverflow.ellipsis,
+                        child: InkWell(
+                          onTap: () {
+                            urlController.text = url;
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return _changeUrlDialog();
+                                });
+                          },
+                          child: Text(
+                            url,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ),
                     ],
@@ -185,6 +196,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               debugPrint(
                                   "console message: ${consoleMessage.message}");
                             },
+                            onCloseWindow: (controller) {
+                              context.router.pop();
+                            },
                           )
                         : const Padding(
                             padding: EdgeInsets.all(20),
@@ -218,5 +232,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
 
     return true;
+  }
+
+  _changeUrlDialog() {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Change url",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(
+              height: 14,
+            ),
+            TextField(controller: urlController),
+            const SizedBox(
+              height: 14,
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  context.router.pop();
+                  _webViewController!.loadUrl(
+                      urlRequest:
+                          URLRequest(url: Uri.parse(urlController.text)));
+                },
+                child: const Text("Load"))
+          ],
+        ),
+      ),
+    );
   }
 }
