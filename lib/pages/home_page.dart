@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:manage_calendar_events/manage_calendar_events.dart';
 import 'package:mobile_web/core/constants/constants.dart';
 import 'package:mobile_web/core/persistence/preference_helper.dart';
 import 'package:path/path.dart' as path;
@@ -27,11 +29,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   InAppWebViewController? _webViewController;
   final urlController = TextEditingController();
-  String? url;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String? url = "https://flutter.dev/";
   double progress = 0;
   final GlobalKey webViewKey = GlobalKey();
   bool showAppbar = true;
   File? tempFile;
+  List<String> drawerActions = [];
 
   @override
   void initState() {
@@ -99,6 +103,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       },
       child: SafeArea(
         child: Scaffold(
+          key: _scaffoldKey,
+          drawer: _buildDrawer(),
           body: Column(children: <Widget>[
             if (showAppbar)
               Container(
@@ -271,6 +277,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return true;
   }
 
+  _buildDrawer() {
+    return Drawer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: List.generate(
+            drawerActions.length,
+            (index) => Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    drawerActions[index],
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                )),
+      ),
+    );
+  }
+
   _changeUrlDialog() {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -343,56 +366,59 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
-  handleArgs(List args) async {
-    if (args[0] == "navbar") {
+  handleArgs(List args) {
+    try {
+      Map<String, dynamic> argData = jsonDecode(args[0]);
+      performAction(argData);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  performAction(Map<String, dynamic> argData) async {
+    if (argData['action'] == "navbar") {
       showAppbar = !showAppbar;
       setState(() {});
-    } else if (args[0] == "selectFile") {
+    } else if (argData['action'] == "openDrawer") {
+      drawerActions =[];
+      List tempList = argData['menu'] as List;
+      for (int i = 0; i < tempList.length; i++) {
+        drawerActions.add(tempList[i] as String);
+      }
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scaffoldKey.currentState!.openDrawer();
+      });
+    } else if (argData['action'] == "selectFile") {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
       if (result != null) {
         tempFile = File(result.files.first.path!);
         return result.files.first.path;
       }
-    } else if (args[0] == "shareFile") {
+    } else if (argData['action'] == "shareFile") {
       if (tempFile != null) {
         Share.shareXFiles([XFile(tempFile!.path)],
             text: "Hay, check this new file");
       } else {
         Fluttertoast.showToast(msg: "Please select s file to share");
       }
-    } else if (args[0] == "downloadFile") {
+    } else if (argData['action'] == "downloadFile") {
       HttpClient httpClient = HttpClient();
       String filePath = '';
-      bool isPermission = false;
-      if (Platform.isAndroid) {
-        var status = await Permission.storage.status;
-        if (!status.isGranted) {
-          var result = await Permission.storage.request();
-          if (!result.isGranted) {
-            openAppSettings();
-            return;
-          } else {
-            isPermission = true;
-          }
-        } else {
-          isPermission = true;
-        }
-      } else {
-        isPermission = true;
-      }
+      bool isPermission = await _getStoragePermission();
       if (isPermission) {
-        var request = await httpClient.getUrl(Uri.parse(args[1]));
+        var request = await httpClient.getUrl(Uri.parse(argData['url']));
         var response = await request.close();
         if (response.statusCode == 200) {
           var bytes = await consolidateHttpClientResponseBytes(response);
-          String basename = path.basename(args[1]);
+          String basename = path.basename(argData['url']);
           File file = File(path.join("/storage/emulated/0/Download", basename));
           await file.writeAsBytes(bytes);
           filePath = file.path;
         }
       }
       return filePath;
-    } else if (args[0] == "setWallpaper") {
+    } else if (argData['action'] == "setWallpaper") {
       if (tempFile != null) {
         int location = WallpaperManager.HOME_SCREEN;
         bool result = await WallpaperManager.setWallpaperFromFile(
@@ -401,6 +427,49 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       } else {
         Fluttertoast.showToast(msg: "Please select file to set wallpaper");
       }
+    } else if (argData['action'] == "addEvent" ||
+        argData['action'] == "removeEvent") {
+      bool isPermission = await _getCalenderPermission();
+      if (isPermission) {
+        final CalendarPlugin calender = CalendarPlugin();
+        List<Calendar>? calenders = await calender.getCalendars();
+        if (calenders != null && calenders.isNotEmpty) {
+          if (argData['action'] == "addEvent") {
+            calender.createEvent(
+                calendarId: calenders[0].id!,
+                event: CalendarEvent(
+                    eventId: argData['title'],
+                    title: argData['title'],
+                    startDate: DateTime.parse(argData['date']),
+                    endDate: DateTime.parse(argData['date'])));
+          } else {
+            calender.deleteEvent(
+                calendarId: calenders[0].id!, eventId: argData['title']);
+          }
+        }
+      }
     }
   }
+}
+
+Future<bool> _getStoragePermission() async {
+  PermissionStatus status = await Permission.storage.status;
+  if (!status.isGranted) {
+    status = await Permission.storage.request();
+    if (!status.isGranted) {
+      openAppSettings();
+    }
+  }
+  return status.isGranted;
+}
+
+Future<bool> _getCalenderPermission() async {
+  PermissionStatus status = await Permission.calendar.status;
+  if (!status.isGranted) {
+    status = await Permission.calendar.request();
+    if (!status.isGranted) {
+      openAppSettings();
+    }
+  }
+  return status.isGranted;
 }
