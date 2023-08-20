@@ -38,3 +38,6 @@
       console.log(result);
     });
     }
+    function navigateTo(href: string) {
+      console.log(href);
+    }
