@@ -1,3 +1,3 @@
-const initialUrl = "";
+const initialUrl = "https://flutter.dev/";
 
 

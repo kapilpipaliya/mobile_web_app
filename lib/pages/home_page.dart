@@ -8,11 +8,11 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:manage_calendar_events/manage_calendar_events.dart';
-import 'package:mobile_web/core/constants/constants.dart';
 import 'package:mobile_web/core/persistence/preference_helper.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
@@ -30,12 +30,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   InAppWebViewController? _webViewController;
   final urlController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  String? url = "https://flutter.dev/";
+  String? url;
+  String? htmlContent;
   double progress = 0;
   final GlobalKey webViewKey = GlobalKey();
   bool showAppbar = true;
   File? tempFile;
-  List<String> drawerActions = [];
+  List<Map<String, dynamic>> drawerActions = [];
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   getUrl() async {
     url = await PreferenceHelper.getUrl();
+    htmlContent = await rootBundle.loadString("assets/html/index.html");
     setState(() {});
   }
 
@@ -147,18 +149,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                        if (url != null)
-                          InkWell(
-                            onTap: () {
-                              url = null;
-                              setState(() {});
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(5),
-                              child: Text('view actions'),
-                            ),
-                          )
+                        )
                       ],
                     ),
                     SizedBox(
@@ -175,82 +166,90 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             FutureBuilder(
                 future: isNetworkAvailable(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return Container();
-                  }
-                  return Expanded(
-                    child: (snapshot.data ?? false)
-                        ? InAppWebView(
-                            key: webViewKey,
-                            initialData: (url != null)
-                                ? InAppWebViewInitialData(data: htmlContent)
-                                : null,
-                            initialUrlRequest: (url != null)
-                                ? URLRequest(url: Uri.parse(url!))
-                                : null,
-                            initialOptions: InAppWebViewGroupOptions(
-                              crossPlatform: InAppWebViewOptions(
-                                javaScriptEnabled: true,
-                                useOnDownloadStart: true,
-                              ),
-                            ),
-                            shouldOverrideUrlLoading:
-                                (controller, navigationAction) async {
-                              final uri = navigationAction.request.url!;
-                              if (uri.scheme == 'http') {
-                                await controller.loadUrl(
-                                    urlRequest: URLRequest(
-                                        url: uri.replace(scheme: 'https')));
-                                return NavigationActionPolicy.CANCEL;
-                              }
-                              return NavigationActionPolicy.ALLOW;
-                            },
-                            onWebViewCreated:
-                                (InAppWebViewController controller) {
-                              _webViewController = controller;
-                              controller.addJavaScriptHandler(
-                                  handlerName: "myChannel",
-                                  callback: handleArgs);
-                            },
-                            onLoadStart:
-                                (InAppWebViewController controller, Uri? url) {
-                              setState(() {
-                                this.url = url.toString();
-                                PreferenceHelper.setUrl(this.url ?? '');
-                              });
-                            },
-                            onLoadStop:
-                                (InAppWebViewController controller, Uri? url) {
-                              setState(() {
-                                this.url = url.toString();
-                                PreferenceHelper.setUrl(this.url ?? '');
-                              });
-                            },
-                            onProgressChanged:
-                                (InAppWebViewController controller,
-                                    int progress) {
-                              setState(() {
-                                this.progress = progress / 100;
-                              });
-                            },
-                            onConsoleMessage:
-                                (InAppWebViewController controller,
-                                    ConsoleMessage consoleMessage) {
-                              debugPrint(
-                                  "console message: ${consoleMessage.message}");
-                            },
-                            onCloseWindow: (controller) {
-                              context.router.pop();
-                            },
-                          )
-                        : const Padding(
-                            padding: EdgeInsets.all(20),
-                            child: Text(
-                              "Not connected to Internet ",
-                              style: TextStyle(fontSize: 22),
-                            ),
-                          ),
-                  );
+                  return (snapshot.hasData &&
+                          (htmlContent != null || url != null))
+                      ? Expanded(
+                          child: (snapshot.data ?? false)
+                              ? InAppWebView(
+                                  key: webViewKey,
+                                  initialData: (htmlContent != null)
+                                      ? InAppWebViewInitialData(
+                                          data: htmlContent!)
+                                      : null,
+                                  initialUrlRequest: (url != null)
+                                      ? URLRequest(url: Uri.parse(url!))
+                                      : null,
+                                  initialOptions: InAppWebViewGroupOptions(
+                                    crossPlatform: InAppWebViewOptions(
+                                      javaScriptEnabled: true,
+                                      useOnDownloadStart: true,
+                                    ),
+                                  ),
+                                  shouldOverrideUrlLoading:
+                                      (controller, navigationAction) async {
+                                    final uri = navigationAction.request.url!;
+                                    if (uri.scheme == 'http') {
+                                      await controller.loadUrl(
+                                          urlRequest: URLRequest(
+                                              url: uri.replace(
+                                                  scheme: 'https')));
+                                      return NavigationActionPolicy.CANCEL;
+                                    }
+                                    return NavigationActionPolicy.ALLOW;
+                                  },
+                                  onWebViewCreated: (InAppWebViewController
+                                      controller) async {
+                                    _webViewController = controller;
+                                    await controller
+                                        .injectJavascriptFileFromAsset(
+                                            assetFilePath:
+                                                "assets/html/index.js");
+                                    controller.addJavaScriptHandler(
+                                        handlerName: "myChannel",
+                                        callback: handleArgs);
+                                  },
+                                  onLoadStart:
+                                      (InAppWebViewController controller,
+                                          Uri? url) {
+                                    setState(() {
+                                      this.url = url.toString();
+                                      PreferenceHelper.setUrl(this.url ?? '');
+                                    });
+                                  },
+                                  onLoadStop:
+                                      (InAppWebViewController controller,
+                                          Uri? url) {
+                                    setState(() {
+                                      this.url = url.toString();
+                                      PreferenceHelper.setUrl(this.url ?? '');
+                                    });
+                                  },
+                                  onProgressChanged:
+                                      (InAppWebViewController controller,
+                                          int progress) {
+                                    setState(() {
+                                      this.progress = progress / 100;
+                                    });
+                                  },
+                                  onConsoleMessage:
+                                      (InAppWebViewController controller,
+                                          ConsoleMessage consoleMessage) {
+                                    debugPrint(
+                                        "console message: ${consoleMessage.message}");
+                                  },
+                                  onCloseWindow: (controller) {
+                                    context.router.pop();
+                                  },
+                                )
+                              : const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Text(
+                                    "Not connected to Internet ",
+                                    style: TextStyle(fontSize: 22),
+                                  ),
+                                ),
+                        )
+                      : Container();
                 }),
           ]),
         ),
@@ -279,18 +278,46 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   _buildDrawer() {
     return Drawer(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: List.generate(
-            drawerActions.length,
-            (index) => Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    drawerActions[index],
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                )),
-      ),
+      child: StatefulBuilder(builder: (context, StateSetter innerState) {
+        return _drawerOptions(drawerActions, innerState);
+      }),
+    );
+  }
+
+  _drawerOptions(List options, StateSetter innerState) {
+    return Column(
+      children: List.generate(
+          options.length,
+          (index) => Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          options[index]['name'],
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        (options[index]['children'] != null &&
+                                (options[index]['children'] as List).isNotEmpty)
+                            ? IconButton(
+                                onPressed: () {
+                                  options[index]['expanded'] =
+                                      !options[index]['expanded'];
+                                  innerState(() {});
+                                },
+                                icon: const Icon(Icons.arrow_drop_down))
+                            : Container()
+                      ],
+                    ),
+                    if (options[index]['expanded'] != null &&
+                        options[index]['expanded'])
+                      _drawerOptions(
+                          options[index]['children'] as List, innerState)
+                  ],
+                ),
+              )),
     );
   }
 
@@ -380,10 +407,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       showAppbar = !showAppbar;
       setState(() {});
     } else if (argData['action'] == "openDrawer") {
-      drawerActions =[];
+      drawerActions = [];
       List tempList = argData['menu'] as List;
       for (int i = 0; i < tempList.length; i++) {
-        drawerActions.add(tempList[i] as String);
+        drawerActions.add(tempList[i] as Map<String, dynamic>);
       }
       setState(() {});
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -396,7 +423,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         return result.files.first.path;
       }
     } else if (argData['action'] == "shareFile") {
-      if (tempFile != null) {
+      if (argData['url'] != null) {
+        Share.share("Hay, Download this new file : ${argData['url']}");
+      } else if (tempFile != null) {
         Share.shareXFiles([XFile(tempFile!.path)],
             text: "Hay, check this new file");
       } else {
@@ -438,13 +467,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             calender.createEvent(
                 calendarId: calenders[0].id!,
                 event: CalendarEvent(
-                    eventId: argData['title'],
+                    eventId: argData['id'],
                     title: argData['title'],
                     startDate: DateTime.parse(argData['date']),
-                    endDate: DateTime.parse(argData['date'])));
+                    endDate: DateTime.parse(argData['date']),
+                    attendees: Attendees(attendees: [])));
           } else {
             calender.deleteEvent(
-                calendarId: calenders[0].id!, eventId: argData['title']);
+                calendarId: calenders[0].id!, eventId: argData['id']);
           }
         }
       }
