@@ -14,7 +14,12 @@
     });
     }
     function downloadFile() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"downloadFile","url":"this is url"}').then(function(result) {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"downloadFile","url":"https://i.ibb.co/nLfC3VP/myride.png"}').then(function(result) {
+      console.log(result);
+    });
+    }
+    function shareNetworkFile() {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"shareFile","url":"this is url"}').then(function(result) {
       console.log(result);
     });
     }
@@ -24,20 +29,27 @@
     });
     }
     function addEvent() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"addEvent","title":"3532","date":"2023-08-19 16:48:12.152664"}').then(function(result) {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"addEvent","id":"1","title":"test event","date":"2023-08-19 16:48:12.152664"}').then(function(result) {
       console.log(result);
     });
     }
     function removeEvent() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"removeEvent","title":"3532"}').then(function(result) {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"removeEvent","id":"1"}').then(function(result) {
       console.log(result);
     });
     }
     function openDrawer() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"openDrawer","menu":["first action","second action"]}').then(function(result) {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"openDrawer","menu":[{"name": "Home", "href": "/admin/","id": "cl-0", "children": [] },{"name": "Base","expanded": false,"id": "cl-1", "children": [{"name": "DataTypes","href": "/admin/DataType","id": "cl-2","children": []},{"name": "Components Category","href": "/admin/CompCategory","id": "cl-3","children": []}]}]}').then(function(result) {
       console.log(result);
     });
     }
-    function navigateTo(href: string) {
-      console.log(href);
+    function getLocation() {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"getLocation"}').then(function(result) {
+      console.log(result);
+    });
+    }
+    function clearCache() {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"clearCache"}').then(function(result) {
+      console.log(result);
+    });
     }

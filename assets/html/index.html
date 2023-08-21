@@ -6,7 +6,7 @@
 <body>
 <button onclick="navbar()">Show/Hide statusBar</button>
 <h1>Click button to open drawer</h1>
-<button onclick="openDrawer()">openDrawer</button>
+<button onclick="openDrawer()">open Drawer</button>
 <h1>Click button to select file</h1>
 <button onclick="selectFile()">select file</button>
 <h1>Click button to share file</h1>
@@ -18,59 +18,13 @@
 <h1>Click button to set home screen Wallpaper</h1>
 <button onclick="setWallpaper()">set WallPaper</button>
 <h1>Click button to add Calender event</h1>
-<button onclick="addEvent()">addEvent</button>
+<button onclick="addEvent()">add Event</button>
 <h1>Click button to remove Calender event</h1>
-<button onclick="removeEvent()">removeEvent</button>
-<script>
-    function navbar() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"navbar"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function selectFile() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"selectFile"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function shareFile() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"shareFile"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function downloadFile() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"downloadFile","url":"this is url"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function shareNetworkFile() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"shareFile","url":"this is url"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function setWallpaper() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"setWallpaper"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function addEvent() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"addEvent","id":"1","title":"test event","date":"2023-08-19 16:48:12.152664"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function removeEvent() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"removeEvent","id":"1"}').then(function(result) {
-      console.log(result);
-    });
-    }
-    function openDrawer() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"openDrawer","menu":[{"name": "Home", "href": "/admin/","id": "cl-0", "children": [] },{"name": "Base","expanded": false,"id": "cl-1", "children": [{"name": "DataTypes","href": "/admin/DataType","id": "cl-2","children": []},{"name": "Components Category","href": "/admin/CompCategory","id": "cl-3","children": []}]}]}').then(function(result) {
-      console.log(result);
-    });
-    }
-
-
-
-
-</script>
+<button onclick="removeEvent()">remove Event</button>
+<h1>Click button to get current location</h1>
+<button onclick="getLocation()">get location</button>
+<h1>Click button to clear browser cache</h1>
+<button onclick="clearCache()">clear cache</button>
+<script src="assets/html/index.js"></script>
 </body>
 </html>
