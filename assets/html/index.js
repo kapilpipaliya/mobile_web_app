@@ -53,3 +53,8 @@
       console.log(result);
     });
     }
+     function showNotification() {
+        window.flutter_inappwebview.callHandler('myChannel', '{"action":"showNotification,"title":"test title","body":"this is test notification body"}').then(function(result) {
+          console.log(result);
+        });
+     }

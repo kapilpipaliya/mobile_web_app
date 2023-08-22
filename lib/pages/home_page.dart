@@ -10,12 +10,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:manage_calendar_events/manage_calendar_events.dart';
 import 'package:mobile_web/core/persistence/preference_helper.dart';
-import 'package:path/path.dart' as path;
+import 'package:mobile_web/provider/download_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -31,6 +32,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   InAppWebViewController? _webViewController;
   final urlController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   String? url;
   String? htmlContent;
   double progress = 0;
@@ -50,6 +52,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     url = await PreferenceHelper.getUrl();
     htmlContent = await rootBundle.loadString("assets/html/index.html");
     setState(() {});
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()!
+        .requestPermission();
   }
 
   @override
@@ -105,156 +111,154 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       },
       child: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () {
-            return Future.delayed(const Duration(milliseconds: 500), () {
-              if (_webViewController != null) {
-                _webViewController!.reload();
-              }
-            });
-          },
-          child: Scaffold(
-            key: _scaffoldKey,
-            drawer: _buildDrawer(),
-            body: Column(children: <Widget>[
-              if (showAppbar)
-                Container(
-                  color: Theme.of(context).primaryColor,
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          IconButton(
-                              onPressed: () {
-                                context.router.pop();
-                              },
-                              icon: const Icon(Icons.arrow_back)),
-                          IconButton(
-                              onPressed: () {
-                                if (_webViewController != null) {
-                                  _webViewController!.goForward();
-                                }
-                              },
-                              icon: const Icon(Icons.arrow_forward)),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                urlController.text = url ?? '';
-                                showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return _changeUrlDialog();
-                                    });
-                              },
-                              child: Text(
-                                url ?? '',
-                                overflow: TextOverflow.ellipsis,
-                              ),
+        child: Scaffold(
+          key: _scaffoldKey,
+          drawer: _buildDrawer(),
+          body: Column(children: <Widget>[
+            if (showAppbar)
+              Container(
+                color: Theme.of(context).primaryColor,
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                            onPressed: () {
+                              context.router.pop();
+                            },
+                            icon: const Icon(Icons.arrow_back)),
+                        IconButton(
+                            onPressed: () {
+                              if (_webViewController != null) {
+                                _webViewController!.goForward();
+                              }
+                            },
+                            icon: const Icon(Icons.arrow_forward)),
+                        IconButton(
+                            onPressed: () {
+                              if (_webViewController != null) {
+                                _webViewController!.reload();
+                              }
+                            },
+                            icon: const Icon(Icons.refresh)),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              urlController.text = url ?? '';
+                              showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return _changeUrlDialog();
+                                  });
+                            },
+                            child: Text(
+                              url ?? '',
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          )
-                        ],
-                      ),
-                      SizedBox(
-                          height: 5,
-                          child: progress < 1.0
-                              ? LinearProgressIndicator(
-                                  value: progress,
-                                  color: Colors.cyan,
-                                )
-                              : Container()),
-                    ],
-                  ),
+                          ),
+                        )
+                      ],
+                    ),
+                    SizedBox(
+                        height: 5,
+                        child: progress < 1.0
+                            ? LinearProgressIndicator(
+                                value: progress,
+                                color: Colors.cyan,
+                              )
+                            : Container()),
+                  ],
                 ),
-              FutureBuilder(
-                  future: isNetworkAvailable(),
-                  builder: (context, snapshot) {
-                    return (snapshot.hasData &&
-                            (htmlContent != null || url != null))
-                        ? Expanded(
-                            child: (snapshot.data ?? false)
-                                ? InAppWebView(
-                                    key: webViewKey,
-                                    initialData: (htmlContent != null)
-                                        ? InAppWebViewInitialData(
-                                            data: htmlContent!)
-                                        : null,
-                                    initialUrlRequest: (url != null)
-                                        ? URLRequest(url: Uri.parse(url!))
-                                        : null,
-                                    initialOptions: InAppWebViewGroupOptions(
-                                      crossPlatform: InAppWebViewOptions(
-                                        javaScriptEnabled: true,
-                                        useOnDownloadStart: true,
-                                      ),
-                                    ),
-                                    shouldOverrideUrlLoading:
-                                        (controller, navigationAction) async {
-                                      final uri = navigationAction.request.url!;
-                                      if (uri.scheme == 'http') {
-                                        await controller.loadUrl(
-                                            urlRequest: URLRequest(
-                                                url: uri.replace(
-                                                    scheme: 'https')));
-                                        return NavigationActionPolicy.CANCEL;
-                                      }
-                                      return NavigationActionPolicy.ALLOW;
-                                    },
-                                    onWebViewCreated: (InAppWebViewController
-                                        controller) async {
-                                      _webViewController = controller;
-                                      await controller
-                                          .injectJavascriptFileFromAsset(
-                                              assetFilePath:
-                                                  "assets/html/index.js");
-                                      controller.addJavaScriptHandler(
-                                          handlerName: "myChannel",
-                                          callback: handleArgs);
-                                    },
-                                    onLoadStart:
-                                        (InAppWebViewController controller,
-                                            Uri? url) {
-                                      setState(() {
-                                        this.url = url.toString();
-                                        PreferenceHelper.setUrl(this.url ?? '');
-                                      });
-                                    },
-                                    onLoadStop:
-                                        (InAppWebViewController controller,
-                                            Uri? url) {
-                                      setState(() {
-                                        this.url = url.toString();
-                                        PreferenceHelper.setUrl(this.url ?? '');
-                                      });
-                                    },
-                                    onProgressChanged:
-                                        (InAppWebViewController controller,
-                                            int progress) {
-                                      setState(() {
-                                        this.progress = progress / 100;
-                                      });
-                                    },
-                                    onConsoleMessage:
-                                        (InAppWebViewController controller,
-                                            ConsoleMessage consoleMessage) {
-                                      debugPrint(
-                                          "console message: ${consoleMessage.message}");
-                                    },
-                                    onCloseWindow: (controller) {
-                                      context.router.pop();
-                                    },
-                                  )
-                                : const Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Text(
-                                      "Not connected to Internet ",
-                                      style: TextStyle(fontSize: 22),
+              ),
+            FutureBuilder(
+                future: isNetworkAvailable(),
+                builder: (context, snapshot) {
+                  return (snapshot.hasData &&
+                          (htmlContent != null || url != null))
+                      ? Expanded(
+                          child: (snapshot.data ?? false)
+                              ? InAppWebView(
+                                  key: webViewKey,
+                                  initialData: (htmlContent != null)
+                                      ? InAppWebViewInitialData(
+                                          data: htmlContent!)
+                                      : null,
+                                  initialUrlRequest: (url != null)
+                                      ? URLRequest(url: Uri.parse(url!))
+                                      : null,
+                                  initialOptions: InAppWebViewGroupOptions(
+                                    crossPlatform: InAppWebViewOptions(
+                                      javaScriptEnabled: true,
+                                      useOnDownloadStart: true,
                                     ),
                                   ),
-                          )
-                        : Container();
-                  }),
-            ]),
-          ),
+                                  shouldOverrideUrlLoading:
+                                      (controller, navigationAction) async {
+                                    final uri = navigationAction.request.url!;
+                                    if (uri.scheme == 'http') {
+                                      await controller.loadUrl(
+                                          urlRequest: URLRequest(
+                                              url: uri.replace(
+                                                  scheme: 'https')));
+                                      return NavigationActionPolicy.CANCEL;
+                                    }
+                                    return NavigationActionPolicy.ALLOW;
+                                  },
+                                  onWebViewCreated: (InAppWebViewController
+                                      controller) async {
+                                    _webViewController = controller;
+                                    await controller
+                                        .injectJavascriptFileFromAsset(
+                                            assetFilePath:
+                                                "assets/html/index.js");
+                                    controller.addJavaScriptHandler(
+                                        handlerName: "myChannel",
+                                        callback: handleArgs);
+                                  },
+                                  onLoadStart:
+                                      (InAppWebViewController controller,
+                                          Uri? url) {
+                                    setState(() {
+                                      this.url = url.toString();
+                                      PreferenceHelper.setUrl(this.url ?? '');
+                                    });
+                                  },
+                                  onLoadStop:
+                                      (InAppWebViewController controller,
+                                          Uri? url) {
+                                    setState(() {
+                                      this.url = url.toString();
+                                      PreferenceHelper.setUrl(this.url ?? '');
+                                    });
+                                  },
+                                  onProgressChanged:
+                                      (InAppWebViewController controller,
+                                          int progress) {
+                                    setState(() {
+                                      this.progress = progress / 100;
+                                    });
+                                  },
+                                  onConsoleMessage:
+                                      (InAppWebViewController controller,
+                                          ConsoleMessage consoleMessage) {
+                                    debugPrint(
+                                        "console message: ${consoleMessage.message}");
+                                  },
+                                  onCloseWindow: (controller) {
+                                    context.router.pop();
+                                  },
+                                )
+                              : const Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Text(
+                                    "Not connected to Internet ",
+                                    style: TextStyle(fontSize: 22),
+                                  ),
+                                ),
+                        )
+                      : Container();
+                }),
+          ]),
         ),
       ),
     );
@@ -435,20 +439,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         Fluttertoast.showToast(msg: "Please select s file to share");
       }
     } else if (argData['action'] == "downloadFile") {
-      String filePath = '';
       await _getStoragePermission();
-      HttpClient httpClient = HttpClient();
-      var request = await httpClient.getUrl(Uri.parse(argData['url']));
-      var response = await request.close();
-      if (response.statusCode == 200) {
-        var bytes = await consolidateHttpClientResponseBytes(response);
-        String basename = path.basename(argData['url']);
-        File file = File(path.join("/storage/emulated/0/Download", basename));
-        await file.writeAsBytes(bytes);
-        filePath = file.path;
-        Fluttertoast.showToast(msg: "file downloaded successfully");
-      }
-      return filePath;
+      await DownloadProvider().download(argData['url']);
+      Fluttertoast.showToast(msg: "File downloaded successfully");
     } else if (argData['action'] == "setWallpaper") {
       if (tempFile != null) {
         int location = WallpaperManager.HOME_SCREEN;
@@ -506,6 +499,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
     } else if (argData['action'] == "clearCache") {
       await _webViewController!.clearCache();
+      Fluttertoast.showToast(msg: "cache data cleared");
+    } else if (argData['action'] == 'showNotification') {
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const DarwinInitializationSettings initializationSettingsDarwin =
+          DarwinInitializationSettings();
+      const InitializationSettings initializationSettings =
+          InitializationSettings(
+              android: initializationSettingsAndroid,
+              iOS: initializationSettingsDarwin);
+      flutterLocalNotificationsPlugin.initialize(initializationSettings);
+      flutterLocalNotificationsPlugin.show(
+        1,
+        argData['title'],
+        argData['body'],
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+              'notification channel id', 'notification channel name',
+              channelDescription: 'notification description'),
+        ),
+      );
     }
   }
 }
