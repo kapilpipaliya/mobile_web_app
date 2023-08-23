@@ -15,7 +15,9 @@ import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:manage_calendar_events/manage_calendar_events.dart';
+import 'package:mobile_web/core/navigator/app_router.gr.dart';
 import 'package:mobile_web/core/persistence/preference_helper.dart';
+import 'package:mobile_web/main.dart';
 import 'package:mobile_web/provider/download_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -32,7 +34,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   InAppWebViewController? _webViewController;
   final urlController = TextEditingController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   String? url;
   String? htmlContent;
   double progress = 0;
@@ -56,7 +57,33 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()!
         .requestPermission();
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings();
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+            android: initializationSettingsAndroid,
+            iOS: initializationSettingsDarwin);
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+        onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
   }
+
+  void onDidReceiveNotificationResponse(NotificationResponse response) {
+    if (response.payload != null && response.payload!.contains('file')) {
+      context.router
+          .push(MediaRoute(filePath: response.payload!.split(':')[1]));
+    }
+  }
+
+  // @pragma('vm:entry-point')
+  // void onDidReceiveBackgroundNotificationResponse(
+  //     NotificationResponse response) {
+  //   if (response.payload != null && response.payload!.contains('file')) {
+  //     context.router
+  //         .push(MediaRoute(filePath: response.payload!.split(':')[1]));
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -501,15 +528,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       await _webViewController!.clearCache();
       Fluttertoast.showToast(msg: "cache data cleared");
     } else if (argData['action'] == 'showNotification') {
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const DarwinInitializationSettings initializationSettingsDarwin =
-          DarwinInitializationSettings();
-      const InitializationSettings initializationSettings =
-          InitializationSettings(
-              android: initializationSettingsAndroid,
-              iOS: initializationSettingsDarwin);
-      flutterLocalNotificationsPlugin.initialize(initializationSettings);
       flutterLocalNotificationsPlugin.show(
         1,
         argData['title'],

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mobile_web/main.dart';
 import 'package:path/path.dart' as path;
 
 class DownloadProvider extends ChangeNotifier {
@@ -26,29 +27,6 @@ class DownloadProvider extends ChangeNotifier {
 }
 
 class NotificationService {
-  static final NotificationService _notificationService =
-      NotificationService._internal();
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-  final AndroidInitializationSettings _androidInitializationSettings =
-      const AndroidInitializationSettings('ic_launcher');
-
-  factory NotificationService() {
-    return _notificationService;
-  }
-
-  NotificationService._internal() {
-    init();
-  }
-
-  void init() async {
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: _androidInitializationSettings,
-    );
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  }
-
   void createNotification(int count, int i, String filePath) {
     var androidPlatformChannelSpecifics = (count != i)
         ? AndroidNotificationDetails('progress channel', 'progress channel',
@@ -71,13 +49,13 @@ class NotificationService {
     var platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
     if (count != i) {
-      _flutterLocalNotificationsPlugin.show(
+      flutterLocalNotificationsPlugin.show(
           0, 'Downloading file...', '$i%', platformChannelSpecifics,
           payload: 'item x');
     } else {
-      _flutterLocalNotificationsPlugin.show(0, 'File downloaded successfully',
+      flutterLocalNotificationsPlugin.show(0, 'File downloaded successfully',
           'saved to $filePath', platformChannelSpecifics,
-          payload: 'item x');
+          payload: 'file:$filePath');
     }
   }
 }
