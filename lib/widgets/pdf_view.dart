@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 
@@ -11,6 +13,8 @@ class PdfViewer extends StatefulWidget {
 }
 
 class _PdfViewerState extends State<PdfViewer> {
+  final Completer<PDFViewController> _controller =
+      Completer<PDFViewController>();
   int currentPage = 0;
 
   @override
@@ -25,7 +29,6 @@ class _PdfViewerState extends State<PdfViewer> {
       defaultPage: currentPage,
       fitPolicy: FitPolicy.BOTH,
       preventLinkNavigation: false,
-      // if set to true the link is handled in flutter
       onRender: (page) {},
       onError: (error) {
         print(error.toString());
@@ -33,7 +36,9 @@ class _PdfViewerState extends State<PdfViewer> {
       onPageError: (page, error) {
         print('$page: ${error.toString()}');
       },
-      onViewCreated: (PDFViewController pdfViewController) {},
+      onViewCreated: (PDFViewController pdfViewController) {
+        _controller.complete(pdfViewController);
+      },
       onLinkHandler: (String? uri) {
         print('goto uri: $uri');
       },

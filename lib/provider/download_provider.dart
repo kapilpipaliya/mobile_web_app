@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mobile_web/main.dart';
 import 'package:path/path.dart' as path;
 
@@ -20,6 +21,8 @@ class DownloadProvider extends ChangeNotifier {
           notifyListeners();
         });
       }));
+      notificationService.createNotification(100, 100, filePath);
+      Fluttertoast.showToast(msg: "File downloaded successfully");
     } on DioException catch (e) {
       print("error downloading file $e");
     }
@@ -54,7 +57,7 @@ class NotificationService {
           payload: 'item x');
     } else {
       flutterLocalNotificationsPlugin.show(0, 'File downloaded successfully',
-          'saved to $filePath', platformChannelSpecifics,
+          'Click to view file', platformChannelSpecifics,
           payload: 'file:$filePath');
     }
   }

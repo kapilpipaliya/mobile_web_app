@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:mobile_web/widgets/action_button.dart';
 import 'package:video_player/video_player.dart';
 
 class MyVideoPlayer extends StatefulWidget {
@@ -14,6 +15,7 @@ class MyVideoPlayer extends StatefulWidget {
 
 class _MyVideoPlayerState extends State<MyVideoPlayer> {
   late VideoPlayerController _controller;
+  bool isPlaying = false;
 
   @override
   void initState() {
@@ -22,6 +24,15 @@ class _MyVideoPlayerState extends State<MyVideoPlayer> {
       ..initialize().then((_) {
         setState(() {});
       });
+    _controller.addListener(() {
+      if ( !_controller.value.isPlaying) {
+        isPlaying = false;
+        setState(() {});
+      }else if(_controller.value.isPlaying){
+        isPlaying = true;
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -35,25 +46,55 @@ class _MyVideoPlayerState extends State<MyVideoPlayer> {
     return MaterialApp(
       title: 'Video Demo',
       home: Scaffold(
-        body: Center(
-          child: _controller.value.isInitialized
-              ? AspectRatio(
-                  aspectRatio: _controller.value.aspectRatio,
-                  child: VideoPlayer(_controller),
-                )
-              : Container(),
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            setState(() {
-              _controller.value.isPlaying
-                  ? _controller.pause()
-                  : _controller.play();
-            });
-          },
-          child: Icon(
-            _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
-          ),
+        body: Stack(
+          children: [
+            Center(
+              child: _controller.value.isInitialized
+                  ? AspectRatio(
+                      aspectRatio: _controller.value.aspectRatio,
+                      child: VideoPlayer(_controller),
+                    )
+                  : Container(),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ActionButton(
+                          onTap: () {}, icon: const Icon(Icons.skip_previous)),
+                      const SizedBox(
+                        width: 20,
+                      ),
+                      ActionButton(
+                          onTap: () {
+                            setState(() {
+                              _controller.value.isPlaying
+                                  ? _controller.pause()
+                                  : _controller.play();
+                            });
+                          },
+                          icon: Icon(isPlaying
+                              ? Icons.pause
+                              : Icons.play_arrow)),
+                      const SizedBox(
+                        width: 20,
+                      ),
+                      ActionButton(
+                          onTap: () {}, icon: const Icon(Icons.skip_next))
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  VideoProgressIndicator(_controller, allowScrubbing: true),
+                ],
+              ),
+            )
+          ],
         ),
       ),
     );

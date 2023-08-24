@@ -468,7 +468,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     } else if (argData['action'] == "downloadFile") {
       await _getStoragePermission();
       await DownloadProvider().download(argData['url']);
-      Fluttertoast.showToast(msg: "File downloaded successfully");
     } else if (argData['action'] == "setWallpaper") {
       if (tempFile != null) {
         int location = WallpaperManager.HOME_SCREEN;

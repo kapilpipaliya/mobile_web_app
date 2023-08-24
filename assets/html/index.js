@@ -14,7 +14,7 @@
     });
     }
     function downloadFile() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"downloadFile","url":"https://i.ibb.co/nLfC3VP/myride.png"}').then(function(result) {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"downloadFile","url":"https://www.kozco.com/tech/LRMonoPhase4.mp3"}').then(function(result) {
       console.log(result);
     });
     }
@@ -54,7 +54,7 @@
     });
     }
      function showNotification() {
-        window.flutter_inappwebview.callHandler('myChannel', '{"action":"showNotification,"title":"test title","body":"this is test notification body"}').then(function(result) {
+        window.flutter_inappwebview.callHandler('myChannel', '{"action":"showNotification","title":"test title","body":"this is test notification body"}').then(function(result) {
           console.log(result);
         });
      }
