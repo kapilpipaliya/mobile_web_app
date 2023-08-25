@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "mobile_web",
+      "package_name": "com.example.mobile_web",
+      "sha256_cert_fingerprints": [
+        "97:DA:00:E5:F3:DA:12:E3:01:60:B3:B7:E7:26:DA:B5:CB:03:F2:9C:71:FD:AE:68:23:06:D6:E3:5C:36:27:52"
+      ]
+    }
+  }
+]
