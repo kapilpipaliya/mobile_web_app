@@ -58,3 +58,8 @@
           console.log(result);
         });
      }
+     function scheduleNotification() {
+             window.flutter_inappwebview.callHandler('myChannel', '{"action":"scheduleNotification","title":"Schedule title","body":"this is schedule notification body"}').then(function(result) {
+               console.log(result);
+             });
+     }

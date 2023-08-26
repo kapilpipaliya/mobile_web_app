@@ -21,6 +21,8 @@ import 'package:mobile_web/main.dart';
 import 'package:mobile_web/provider/download_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 
 @RoutePage()
 class HomePage extends StatefulWidget {
@@ -55,16 +57,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     setState(() {});
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()!
+        AndroidFlutterLocalNotificationsPlugin>()!
         .requestPermission();
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
     const DarwinInitializationSettings initializationSettingsDarwin =
-        DarwinInitializationSettings();
+    DarwinInitializationSettings();
     const InitializationSettings initializationSettings =
-        InitializationSettings(
-            android: initializationSettingsAndroid,
-            iOS: initializationSettingsDarwin);
+    InitializationSettings(
+        android: initializationSettingsAndroid,
+        iOS: initializationSettingsDarwin);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
   }
@@ -144,7 +146,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           body: Column(children: <Widget>[
             if (showAppbar)
               Container(
-                color: Theme.of(context).primaryColor,
+                color: Theme
+                    .of(context)
+                    .primaryColor,
                 child: Column(
                   children: [
                     Row(
@@ -190,9 +194,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         height: 5,
                         child: progress < 1.0
                             ? LinearProgressIndicator(
-                                value: progress,
-                                color: Colors.cyan,
-                              )
+                          value: progress,
+                          color: Colors.cyan,
+                        )
                             : Container()),
                   ],
                 ),
@@ -201,88 +205,88 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 future: isNetworkAvailable(),
                 builder: (context, snapshot) {
                   return (snapshot.hasData &&
-                          (htmlContent != null || url != null))
+                      (htmlContent != null || url != null))
                       ? Expanded(
-                          child: (snapshot.data ?? false)
-                              ? InAppWebView(
-                                  key: webViewKey,
-                                  initialData: (htmlContent != null)
-                                      ? InAppWebViewInitialData(
-                                          data: htmlContent!)
-                                      : null,
-                                  initialUrlRequest: (url != null)
-                                      ? URLRequest(url: Uri.parse(url!))
-                                      : null,
-                                  initialOptions: InAppWebViewGroupOptions(
-                                    crossPlatform: InAppWebViewOptions(
-                                      javaScriptEnabled: true,
-                                      useOnDownloadStart: true,
-                                    ),
-                                  ),
-                                  shouldOverrideUrlLoading:
-                                      (controller, navigationAction) async {
-                                    final uri = navigationAction.request.url!;
-                                    if (uri.scheme == 'http') {
-                                      await controller.loadUrl(
-                                          urlRequest: URLRequest(
-                                              url: uri.replace(
-                                                  scheme: 'https')));
-                                      return NavigationActionPolicy.CANCEL;
-                                    }
-                                    return NavigationActionPolicy.ALLOW;
-                                  },
-                                  onWebViewCreated: (InAppWebViewController
-                                      controller) async {
-                                    _webViewController = controller;
-                                    await controller
-                                        .injectJavascriptFileFromAsset(
-                                            assetFilePath:
-                                                "assets/html/index.js");
-                                    controller.addJavaScriptHandler(
-                                        handlerName: "myChannel",
-                                        callback: handleArgs);
-                                  },
-                                  onLoadStart:
-                                      (InAppWebViewController controller,
-                                          Uri? url) {
-                                    setState(() {
-                                      this.url = url.toString();
-                                      PreferenceHelper.setUrl(this.url ?? '');
-                                    });
-                                  },
-                                  onLoadStop:
-                                      (InAppWebViewController controller,
-                                          Uri? url) {
-                                    setState(() {
-                                      this.url = url.toString();
-                                      PreferenceHelper.setUrl(this.url ?? '');
-                                    });
-                                  },
-                                  onProgressChanged:
-                                      (InAppWebViewController controller,
-                                          int progress) {
-                                    setState(() {
-                                      this.progress = progress / 100;
-                                    });
-                                  },
-                                  onConsoleMessage:
-                                      (InAppWebViewController controller,
-                                          ConsoleMessage consoleMessage) {
-                                    debugPrint(
-                                        "console message: ${consoleMessage.message}");
-                                  },
-                                  onCloseWindow: (controller) {
-                                    context.router.pop();
-                                  },
-                                )
-                              : const Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: Text(
-                                    "Not connected to Internet ",
-                                    style: TextStyle(fontSize: 22),
-                                  ),
-                                ),
-                        )
+                    child: (snapshot.data ?? false)
+                        ? InAppWebView(
+                      key: webViewKey,
+                      initialData: (htmlContent != null)
+                          ? InAppWebViewInitialData(
+                          data: htmlContent!)
+                          : null,
+                      initialUrlRequest: (url != null)
+                          ? URLRequest(url: Uri.parse(url!))
+                          : null,
+                      initialOptions: InAppWebViewGroupOptions(
+                        crossPlatform: InAppWebViewOptions(
+                          javaScriptEnabled: true,
+                          useOnDownloadStart: true,
+                        ),
+                      ),
+                      shouldOverrideUrlLoading:
+                          (controller, navigationAction) async {
+                        final uri = navigationAction.request.url!;
+                        if (uri.scheme == 'http') {
+                          await controller.loadUrl(
+                              urlRequest: URLRequest(
+                                  url: uri.replace(
+                                      scheme: 'https')));
+                          return NavigationActionPolicy.CANCEL;
+                        }
+                        return NavigationActionPolicy.ALLOW;
+                      },
+                      onWebViewCreated: (InAppWebViewController
+                      controller) async {
+                        _webViewController = controller;
+                        await controller
+                            .injectJavascriptFileFromAsset(
+                            assetFilePath:
+                            "assets/html/index.js");
+                        controller.addJavaScriptHandler(
+                            handlerName: "myChannel",
+                            callback: handleArgs);
+                      },
+                      onLoadStart:
+                          (InAppWebViewController controller,
+                          Uri? url) {
+                        setState(() {
+                          this.url = url.toString();
+                          PreferenceHelper.setUrl(this.url ?? '');
+                        });
+                      },
+                      onLoadStop:
+                          (InAppWebViewController controller,
+                          Uri? url) {
+                        setState(() {
+                          this.url = url.toString();
+                          PreferenceHelper.setUrl(this.url ?? '');
+                        });
+                      },
+                      onProgressChanged:
+                          (InAppWebViewController controller,
+                          int progress) {
+                        setState(() {
+                          this.progress = progress / 100;
+                        });
+                      },
+                      onConsoleMessage:
+                          (InAppWebViewController controller,
+                          ConsoleMessage consoleMessage) {
+                        debugPrint(
+                            "console message: ${consoleMessage.message}");
+                      },
+                      onCloseWindow: (controller) {
+                        context.router.pop();
+                      },
+                    )
+                        : const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text(
+                        "Not connected to Internet ",
+                        style: TextStyle(fontSize: 22),
+                      ),
+                    ),
+                  )
                       : Container();
                 }),
           ]),
@@ -322,7 +326,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     return Column(
       children: List.generate(
           options.length,
-          (index) => Padding(
+              (index) =>
+              Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
@@ -334,14 +339,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           style: const TextStyle(fontSize: 20),
                         ),
                         (options[index]['children'] != null &&
-                                (options[index]['children'] as List).isNotEmpty)
+                            (options[index]['children'] as List).isNotEmpty)
                             ? IconButton(
-                                onPressed: () {
-                                  options[index]['expanded'] =
-                                      !options[index]['expanded'];
-                                  innerState(() {});
-                                },
-                                icon: const Icon(Icons.arrow_drop_down))
+                            onPressed: () {
+                              options[index]['expanded'] =
+                              !options[index]['expanded'];
+                              innerState(() {});
+                            },
+                            icon: const Icon(Icons.arrow_drop_down))
                             : Container()
                       ],
                     ),
@@ -380,7 +385,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                   context.router.pop();
                   _webViewController!.loadUrl(
                       urlRequest:
-                          URLRequest(url: Uri.parse(urlController.text)));
+                      URLRequest(url: Uri.parse(urlController.text)));
                 },
                 child: const Text("Load"))
           ],
@@ -519,7 +524,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         Position position = await Geolocator.getCurrentPosition();
         Fluttertoast.showToast(
             msg:
-                "Latitude is : ${position.latitude}\nLongitude is : ${position.longitude}");
+            "Latitude is : ${position.latitude}\nLongitude is : ${position
+                .longitude}");
       } catch (e) {
         print(e.toString());
       }
@@ -537,25 +543,66 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               channelDescription: 'notification description'),
         ),
       );
+    } else if (argData['action'] == 'scheduleNotification') {
+      TimeOfDay? time = await showTimePicker(
+          context: context, initialTime: const TimeOfDay(hour: 6, minute: 0));
+      var data = {
+        "data": {
+          "click_action": "FLUTTER_NOTIFICATION_CLICK",
+          "sound": "default",
+          "status": "done",
+          "screen": "HomePage",
+        },
+      };
+      if (time != null) {
+        tz.initializeTimeZones();
+        final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+        tz.TZDateTime datetime = tz.TZDateTime.from(
+          DateTime(now.year, now.month, now.day, time.hour, time.minute),
+          tz.local,
+        );
+        tz.TZDateTime scheduledDate =
+        tz.TZDateTime(tz.local, now.year, now.month, now.day, datetime.hour,
+            datetime.minute);
+        if (scheduledDate.isBefore(now)) {
+          scheduledDate = scheduledDate.add(const Duration(days: 1));
+        }
+        await flutterLocalNotificationsPlugin.zonedSchedule(
+            2,
+            argData['title'],
+            argData['body'],
+            scheduledDate,
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                  'scheduled notification channel id',
+                  'scheduled notification channel name',
+                  channelDescription: 'scheduled daily notification description',
+                  importance: Importance.high),
+            ),
+            payload: json.encode(data),
+            uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+            matchDateTimeComponents: DateTimeComponents.time);
+      }
     }
   }
-}
 
-Future<bool> _getStoragePermission() async {
-  PermissionStatus status = await Permission.storage.status;
-  if (!status.isGranted) {
-    status = await Permission.storage.request();
-  }
-  return status.isGranted;
-}
-
-Future<bool> _getCalenderPermission() async {
-  PermissionStatus status = await Permission.calendar.status;
-  if (!status.isGranted) {
-    status = await Permission.calendar.request();
-    if (status.isPermanentlyDenied) {
-      openAppSettings();
+  Future<bool> _getStoragePermission() async {
+    PermissionStatus status = await Permission.storage.status;
+    if (!status.isGranted) {
+      status = await Permission.storage.request();
     }
+    return status.isGranted;
   }
-  return status.isGranted;
+
+  Future<bool> _getCalenderPermission() async {
+    PermissionStatus status = await Permission.calendar.status;
+    if (!status.isGranted) {
+      status = await Permission.calendar.request();
+      if (status.isPermanentlyDenied) {
+        openAppSettings();
+      }
+    }
+    return status.isGranted;
+  }
 }
