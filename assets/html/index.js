@@ -29,12 +29,12 @@
     });
     }
     function addEvent() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"addEvent","id":"1","title":"test event","date":"2023-08-19 16:48:12.152664"}').then(function(result) {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"addEvent","title":"test event"}').then(function(result) {
       console.log(result);
     });
     }
     function removeEvent() {
-    window.flutter_inappwebview.callHandler('myChannel', '{"action":"removeEvent","id":"1"}').then(function(result) {
+    window.flutter_inappwebview.callHandler('myChannel', '{"action":"removeEvent"}').then(function(result) {
       console.log(result);
     });
     }

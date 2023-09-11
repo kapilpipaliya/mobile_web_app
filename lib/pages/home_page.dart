@@ -14,10 +14,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_wallpaper_manager/flutter_wallpaper_manager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:manage_calendar_events/manage_calendar_events.dart';
 import 'package:mobile_web/core/navigator/app_router.gr.dart';
 import 'package:mobile_web/core/persistence/preference_helper.dart';
 import 'package:mobile_web/main.dart';
+import 'package:mobile_web/core/calender/calender_events.dart';
 import 'package:mobile_web/provider/download_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -42,6 +42,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final GlobalKey webViewKey = GlobalKey();
   bool showAppbar = true;
   File? tempFile;
+  String? eventId;
   List<Map<String, dynamic>> drawerActions = [];
 
   @override
@@ -486,22 +487,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         argData['action'] == "removeEvent") {
       bool isPermission = await _getCalenderPermission();
       if (isPermission) {
-        final CalendarPlugin calender = CalendarPlugin();
-        List<Calendar>? calenders = await calender.getCalendars();
-        if (calenders != null && calenders.isNotEmpty) {
-          if (argData['action'] == "addEvent") {
-            calender.createEvent(
-                calendarId: calenders[0].id!,
-                event: CalendarEvent(
-                    eventId: argData['id'],
-                    title: argData['title'],
-                    startDate: DateTime.parse(argData['date']),
-                    endDate: DateTime.parse(argData['date']),
-                    attendees: Attendees(attendees: [])));
-          } else {
-            calender.deleteEvent(
-                calendarId: calenders[0].id!, eventId: argData['id']);
-          }
+        dynamic value = await CalenderEventHelper.manageEvent(argData, context,eventId);
+        if(value == true) {
+          Fluttertoast.showToast(msg: "Event deleted");
+        }else if(value is String){
+          eventId = value;
+          Fluttertoast.showToast(msg: "Event added : $value");
+        }else{
+          Fluttertoast.showToast(msg: "Something went wrong");
         }
       }
     } else if (argData['action'] == "getLocation") {
