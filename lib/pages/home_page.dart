@@ -55,6 +55,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   getUrl() async {
     url = await PreferenceHelper.getUrl();
     htmlContent = await rootBundle.loadString("assets/html/index.html");
+    print("this is $url");
     setState(() {});
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
@@ -188,7 +189,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                     SizedBox(
@@ -211,7 +212,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                     child: (snapshot.data ?? false)
                         ? InAppWebView(
                       key: webViewKey,
-                      initialData: (htmlContent != null)
+                      initialData: (htmlContent != null && (url == null || url!.isEmpty))
                           ? InAppWebViewInitialData(
                           data: htmlContent!)
                           : null,
@@ -251,7 +252,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           (InAppWebViewController controller,
                           Uri? url) {
                         setState(() {
-                          this.url = url.toString();
+                          this.url = (url != null && !url.toString().contains('blank'))?url.toString() : null;
                           PreferenceHelper.setUrl(this.url ?? '');
                         });
                       },
@@ -259,7 +260,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           (InAppWebViewController controller,
                           Uri? url) {
                         setState(() {
-                          this.url = url.toString();
+                          this.url = (url != null && !url.toString().contains('blank'))?url.toString() : null;
                           PreferenceHelper.setUrl(this.url ?? '');
                         });
                       },

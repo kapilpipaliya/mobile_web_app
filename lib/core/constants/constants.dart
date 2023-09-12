@@ -1,4 +1,4 @@
-const initialUrl = "https://flutter.dev/";
+const initialUrl = "http://49.12.190.36:1401/admin/login";
 
 const testImageUrl = "https://i.ibb.co/nLfC3VP/myride.png";
 const testPdfUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
