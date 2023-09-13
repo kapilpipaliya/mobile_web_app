@@ -3,6 +3,11 @@
       console.log(result);
     });
     }
+    function changeTheme() {
+        window.flutter_inappwebview.callHandler('myChannel', '{"action":"changeTheme"}').then(function(result) {
+          console.log(result);
+        });
+    }
     function selectFile() {
     window.flutter_inappwebview.callHandler('myChannel', '{"action":"selectFile"}').then(function(result) {
       console.log(result);
